@@ -24,14 +24,14 @@ This Docker container packages the gpt-oss reference implementation of web brows
 
 ## Features
 
-- **Web Search**: Query the web using Exa or You.com backends
+- **Web Search**: Query the web using Exa, You.com, or Firecrawl backends
 - **Page Reading**: Open URLs and read content with intelligent extraction
 - **Pattern Finding**: Search for text patterns within loaded pages
 - **Session Management**: Per-client isolated browser state
 - **Citation Tracking**: Precise source attribution with line-level citations
 - **Streamable HTTP**: Server-Sent Events (SSE) for real-time streaming
 - **Token-Aware**: Automatic truncation to fit context windows
-- **Multi-Backend**: Pluggable search providers (Exa, You.com)
+- **Multi-Backend**: Pluggable search providers (Exa, You.com, Firecrawl)
 - **Health Monitoring**: Built-in health checks for orchestration
 - **Production Ready**: Multi-stage builds, minimal image size
 
@@ -40,9 +40,10 @@ This Docker container packages the gpt-oss reference implementation of web brows
 ### Required
 
 - Docker 20.10+ and Docker Compose 2.0+
-- API key from either:
+- API key from one of:
   - [Exa](https://exa.ai) (recommended for general search)
   - [You.com](https://api.you.com) (good for news and recent content)
+  - [Firecrawl](https://firecrawl.dev) (excellent for page scraping and search)
 
 ### Optional
 
@@ -105,9 +106,11 @@ docker inspect --format='{{.State.Health.Status}}' gpt-oss-mcp-browser
 
 | Variable | Default | Required | Description |
 |----------|---------|----------|-------------|
-| `BROWSER_BACKEND` | `exa` | No | Search backend: `exa` or `youcom` |
+| `BROWSER_BACKEND` | `exa` | No | Search backend: `exa`, `youcom`, or `firecrawl` |
 | `EXA_API_KEY` | - | Yes (for exa) | API key from exa.ai |
 | `YDC_API_KEY` | - | Yes (for youcom) | API key from You.com |
+| `FIRECRAWL_API_KEY` | - | Yes (for firecrawl) | API key from firecrawl.dev |
+| `FIRECRAWL_BASE_URL` | `https://api.firecrawl.dev/v2` | No | Custom Firecrawl API URL (for self-hosted) |
 
 ### Backend Selection
 
@@ -121,12 +124,25 @@ docker inspect --format='{{.State.Health.Status}}' gpt-oss-mcp-browser
 - Best for: Recent news, current events, time-sensitive queries
 - Setup: Get key from https://api.you.com
 
+**Firecrawl Backend**:
+- Strengths: High-quality scraping, structured data extraction, supports self-hosted
+- Best for: Detailed page content, custom scraping needs, enterprise deployments
+- Setup: Get key from https://firecrawl.dev
+- Note: Supports custom base URL for self-hosted instances
+
 To switch backends, update `.env`:
 
 ```bash
-# Use You.com instead
+# Use You.com
 BROWSER_BACKEND=youcom
 YDC_API_KEY=your_youcom_key_here
+
+# Or use Firecrawl
+BROWSER_BACKEND=firecrawl
+FIRECRAWL_API_KEY=your_firecrawl_key_here
+
+# Optional: For self-hosted Firecrawl
+FIRECRAWL_BASE_URL=https://your-firecrawl-instance.com/v2
 ```
 
 ## Available Tools
@@ -496,9 +512,13 @@ sudo ufw allow 8001
 
 3. Try alternative backend:
 ```bash
-# In .env
+# In .env - Try You.com
 BROWSER_BACKEND=youcom
 YDC_API_KEY=your_youcom_key
+
+# Or try Firecrawl
+BROWSER_BACKEND=firecrawl
+FIRECRAWL_API_KEY=your_firecrawl_key
 ```
 
 ### Search Returns No Results
@@ -513,7 +533,11 @@ YDC_API_KEY=your_youcom_key
 
 2. Check network connectivity:
 ```bash
+# Test Exa
 docker exec gpt-oss-mcp-browser curl https://api.exa.ai
+
+# Test Firecrawl
+docker exec gpt-oss-mcp-browser curl https://api.firecrawl.dev
 ```
 
 3. Try different query:
@@ -587,19 +611,20 @@ docker run --user $(id -u):$(id -g) ...
 │                  │                                       │
 │  ┌───────────────▼───────────────────────────────────┐  │
 │  │           Backend Interface                       │  │
-│  │  ┌─────────────────┐  ┌────────────────────────┐  │  │
-│  │  │  ExaBackend     │  │  YouComBackend         │  │  │
-│  │  │  - /search      │  │  - /v1/search          │  │  │
-│  │  │  - /contents    │  │  - /v1/contents        │  │  │
-│  │  └─────────┬───────┘  └────────┬───────────────┘  │  │
-│  └────────────┼─────────────────────┼─────────────────┘  │
-└───────────────┼─────────────────────┼─────────────────────┘
-                │                     │
-                │                     │
-    ┌───────────▼──────────┐ ┌────────▼──────────────┐
-    │   Exa API            │ │   You.com API         │
-    │   (exa.ai)           │ │   (you.com)           │
-    └──────────────────────┘ └───────────────────────┘
+│  │  ┌──────────────┐ ┌──────────────┐ ┌──────────┐  │  │
+│  │  │ ExaBackend   │ │ YouComBackend│ │Firecrawl │  │  │
+│  │  │ - /search    │ │ - /v1/search │ │Backend   │  │  │
+│  │  │ - /contents  │ │ - /v1/contents│ │- /search│  │  │
+│  │  │              │ │              │ │ - /scrape│  │  │
+│  │  └──────┬───────┘ └──────┬───────┘ └────┬─────┘  │  │
+│  └─────────┼────────────────┼──────────────┼────────┘  │
+└────────────┼────────────────┼──────────────┼────────────┘
+             │                │              │
+             │                │              │
+   ┌─────────▼──────┐ ┌───────▼────────┐ ┌─▼──────────┐
+   │   Exa API      │ │  You.com API   │ │Firecrawl   │
+   │   (exa.ai)     │ │  (you.com)     │ │API         │
+   └────────────────┘ └────────────────┘ └────────────┘
 ```
 
 ### Component Flow
@@ -607,7 +632,7 @@ docker run --user $(id -u):$(id -g) ...
 1. **Request Handling**: Client sends MCP tool call via HTTP/SSE
 2. **Session Management**: AppContext creates/retrieves browser for client
 3. **Tool Execution**: SimpleBrowserTool processes request
-4. **Backend Query**: Appropriate backend (Exa/You.com) fetched
+4. **Backend Query**: Appropriate backend (Exa/You.com/Firecrawl) fetched
 5. **Content Processing**: HTML converted to structured text with citations
 6. **Response Streaming**: Results streamed back via SSE
 
