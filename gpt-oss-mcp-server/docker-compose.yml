@@ -11,11 +11,13 @@ services:
     ports:
       - "8001:8001"
     environment:
-      # Choose backend: "exa" or "youcom"
+      # Choose backend: "exa", "youcom", or "firecrawl"
       - BROWSER_BACKEND=${BROWSER_BACKEND:-exa}
       # API keys (set these in .env file)
       - EXA_API_KEY=${EXA_API_KEY}
       - YDC_API_KEY=${YDC_API_KEY}
+      - FIRECRAWL_API_KEY=${FIRECRAWL_API_KEY}
+      - FIRECRAWL_BASE_URL=${FIRECRAWL_BASE_URL:-https://api.firecrawl.dev/v2}
     env_file:
       - .env
     healthcheck:

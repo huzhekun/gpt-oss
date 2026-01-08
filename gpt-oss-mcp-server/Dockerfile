@@ -1,4 +1,7 @@
 # Multi-stage build for gpt-oss MCP Browser Server
+# NOTE: Build this from the gpt-oss root directory, not from gpt-oss-mcp-server/
+# Example: docker build -f gpt-oss-mcp-server/Dockerfile -t gpt-oss-mcp-browser:latest .
+
 FROM python:3.12-slim as builder
 
 # Install build dependencies
@@ -8,16 +11,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /build
 
-# Copy the main gpt-oss package
-COPY ../pyproject.toml ../README.md /build/gpt-oss/
-COPY ../gpt_oss /build/gpt-oss/gpt_oss/
+# Copy the main gpt-oss package from root
+COPY pyproject.toml README.md /build/gpt-oss/
+COPY gpt_oss /build/gpt-oss/gpt_oss/
+COPY _build /build/gpt-oss/_build/
+COPY MANIFEST.in /build/gpt-oss/
 
 # Install gpt-oss package
 RUN cd /build/gpt-oss && pip install --no-cache-dir .
 
 # Copy MCP server files
-COPY pyproject.toml /build/mcp-server/
-COPY browser_server.py /build/mcp-server/
+COPY gpt-oss-mcp-server/pyproject.toml /build/mcp-server/
+COPY gpt-oss-mcp-server/browser_server.py /build/mcp-server/
 
 # Install MCP server dependencies
 RUN cd /build/mcp-server && pip install --no-cache-dir .
@@ -37,7 +42,7 @@ COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/pytho
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy application code
-COPY browser_server.py /app/
+COPY gpt-oss-mcp-server/browser_server.py /app/
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
