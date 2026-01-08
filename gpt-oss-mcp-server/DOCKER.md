@@ -384,7 +384,7 @@ from mcp import ClientSession
 from mcp.client.sse import sse_client
 
 async def search_web():
-    async with sse_client("http://localhost:8001") as (read, write):
+    async with sse_client("http://localhost:8001/sse") as (read, write):
         async with ClientSession(read, write) as session:
             # Initialize
             await session.initialize()
@@ -413,11 +413,13 @@ Add to your Claude Desktop MCP settings (`~/Library/Application Support/Claude/c
 {
   "mcpServers": {
     "browser": {
-      "url": "http://localhost:8001"
+      "url": "http://localhost:8001/sse"
     }
   }
 }
 ```
+
+**Note**: The MCP endpoint requires the `/sse` path when connecting over SSE transport.
 
 ### Custom Application Integration
 

@@ -117,7 +117,7 @@ FIRECRAWL_API_KEY=your_firecrawl_api_key_here
 
 ### Server Endpoints
 
-- **MCP Endpoint**: `http://localhost:8001`
+- **MCP SSE Endpoint**: `http://localhost:8001/sse`
 - **Health Check**: `http://localhost:8001/health`
 
 ### Connecting Clients
@@ -126,7 +126,7 @@ FIRECRAWL_API_KEY=your_firecrawl_api_key_here
 from mcp import ClientSession
 from mcp.client.sse import sse_client
 
-async with sse_client("http://localhost:8001") as (read, write):
+async with sse_client("http://localhost:8001/sse") as (read, write):
     async with ClientSession(read, write) as session:
         await session.initialize()
         result = await session.call_tool("search", {"query": "AI news"})
