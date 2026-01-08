@@ -9,6 +9,8 @@ The build system prompt script show case all the care needed to automatically di
 
 ## Usage
 
+### Local Development
+
 ```bash
 # Install the dependencies
 uv pip install -r requirements.txt
@@ -27,3 +29,99 @@ Once opened, set SSE to `http://localhost:8001/sse` and `http://localhost:8000/s
 
 To compare the system prompt and see how to construct it via MCP service discovery, see `build-system-prompt.py`.
 This script will generate exactly the same system prompt as `reference-system-prompt.py`.
+
+## Docker Deployment
+
+### Browser Server Docker Container
+
+For production deployments, you can use Docker to run the MCP browser server as a standalone container.
+
+#### Quick Start with Docker Compose
+
+```bash
+# 1. Copy the environment template
+cp .env.example .env
+
+# 2. Edit .env with your API keys
+# BROWSER_BACKEND=exa
+# EXA_API_KEY=your_api_key_here
+
+# 3. Build and start the server
+docker-compose up -d
+
+# 4. Check logs
+docker-compose logs -f
+
+# 5. Stop the server
+docker-compose down
+```
+
+#### Manual Docker Build
+
+```bash
+# Build from the gpt-oss root directory
+cd /path/to/gpt-oss
+docker build -f gpt-oss-mcp-server/Dockerfile -t gpt-oss-mcp-browser:latest .
+
+# Run the container
+docker run -d \
+  --name gpt-oss-mcp-browser \
+  -p 8001:8001 \
+  -e BROWSER_BACKEND=exa \
+  -e EXA_API_KEY=your_api_key_here \
+  gpt-oss-mcp-browser:latest
+```
+
+### Features
+
+The Docker container provides:
+
+- **Web Search**: Search using Exa or You.com backends
+- **Page Reading**: Open and read web pages with smart content extraction
+- **Pattern Finding**: Search for patterns within loaded pages
+- **Session Management**: Per-client browser state with page history
+- **Citation Support**: Proper citation formatting for source attribution
+- **Streamable HTTP**: SSE transport for real-time streaming
+- **Health Checks**: Built-in health monitoring
+
+### Available Tools
+
+The MCP server exposes three tools:
+
+1. **search**: Search for information with configurable result count
+2. **open**: Open links or navigate pages with viewport control
+3. **find**: Search for patterns within loaded pages
+
+### Configuration
+
+Set these environment variables in your `.env` file:
+
+```bash
+# Backend selection: "exa" or "youcom"
+BROWSER_BACKEND=exa
+
+# Exa API Key (get from https://exa.ai)
+EXA_API_KEY=your_exa_api_key_here
+
+# You.com API Key (get from https://api.you.com)
+YDC_API_KEY=your_youcom_api_key_here
+```
+
+### Server Endpoints
+
+- **MCP Endpoint**: `http://localhost:8001`
+- **Health Check**: `http://localhost:8001/health`
+
+### Connecting Clients
+
+```python
+from mcp import ClientSession
+from mcp.client.sse import sse_client
+
+async with sse_client("http://localhost:8001") as (read, write):
+    async with ClientSession(read, write) as session:
+        await session.initialize()
+        result = await session.call_tool("search", {"query": "AI news"})
+```
+
+For detailed documentation on Docker deployment, configuration options, troubleshooting, and architecture, see the inline comments in the Docker files or run the container and check the logs.

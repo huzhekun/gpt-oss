@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  mcp-browser-server:
+    build:
+      context: ..
+      dockerfile: gpt-oss-mcp-server/Dockerfile
+    image: gpt-oss-mcp-browser-server:latest
+    container_name: gpt-oss-mcp-browser
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    environment:
+      # Choose backend: "exa" or "youcom"
+      - BROWSER_BACKEND=${BROWSER_BACKEND:-exa}
+      # API keys (set these in .env file)
+      - EXA_API_KEY=${EXA_API_KEY}
+      - YDC_API_KEY=${YDC_API_KEY}
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    networks:
+      - mcp-network
+
+networks:
+  mcp-network:
+    driver: bridge
