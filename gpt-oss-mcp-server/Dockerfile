@@ -47,6 +47,7 @@ COPY gpt-oss-mcp-server/browser_server.py /app/
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
 ENV BROWSER_BACKEND=exa
+ENV HOST=0.0.0.0
 
 # Expose MCP server port
 EXPOSE 8001

@@ -11,6 +11,8 @@ services:
     ports:
       - "8001:8001"
     environment:
+      # Host to bind to (0.0.0.0 for all interfaces, 127.0.0.1 for localhost only)
+      - HOST=${HOST:-0.0.0.0}
       # Choose backend: "exa", "youcom", or "firecrawl"
       - BROWSER_BACKEND=${BROWSER_BACKEND:-exa}
       # API keys (set these in .env file)

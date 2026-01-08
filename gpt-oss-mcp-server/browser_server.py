@@ -47,7 +47,7 @@ Do not quote more than 10 words directly from the tool output.
 sources=web
 """.strip(),
     lifespan=app_lifespan,
-    host="0.0.0.0",
+    host=os.getenv("HOST", "127.0.0.1"),
     port=8001,
 )
 
