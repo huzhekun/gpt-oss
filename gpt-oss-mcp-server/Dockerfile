@@ -56,5 +56,5 @@ EXPOSE 8001
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8001/health').read()" || exit 1
 
-# Run the MCP server using mcp CLI
-CMD ["mcp", "run", "-t", "sse", "browser_server.py:mcp"]
+# Run the MCP server directly with HTTP streaming
+CMD ["python", "-m", "uvicorn", "browser_server:app", "--host", "0.0.0.0", "--port", "8001"]

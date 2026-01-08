@@ -130,3 +130,7 @@ async def find_pattern(ctx: Context, pattern: str, cursor: int = -1) -> str:
 async def health_check(request: Request) -> JSONResponse:
     """Health check endpoint for container orchestration"""
     return JSONResponse({"status": "healthy"})
+
+
+# Expose the ASGI app for uvicorn with streamable HTTP transport
+app = mcp.streamable_http_app()

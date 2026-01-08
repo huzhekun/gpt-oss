@@ -18,14 +18,14 @@ uv pip install -r requirements.txt
 
 ```bash
 # Assume we have harmony and gpt-oss installed
-uv pip install mcp[cli]
+uv pip install mcp[cli] uvicorn
 # start the servers
-mcp run -t sse browser_server.py:mcp
-mcp run -t sse python_server.py:mcp
+python -m uvicorn browser_server:app --host 0.0.0.0 --port 8001
+python -m uvicorn python_server:app --host 0.0.0.0 --port 8000
 ```
 
 You can now use MCP inspector to play with the tools.
-Once opened, set SSE to `http://localhost:8001/sse` and `http://localhost:8000/sse` respectively.
+Once opened, connect to `http://localhost:8001` and `http://localhost:8000` respectively.
 
 To compare the system prompt and see how to construct it via MCP service discovery, see `build-system-prompt.py`.
 This script will generate exactly the same system prompt as `reference-system-prompt.py`.
@@ -83,7 +83,7 @@ The Docker container provides:
 - **Pattern Finding**: Search for patterns within loaded pages
 - **Session Management**: Per-client browser state with page history
 - **Citation Support**: Proper citation formatting for source attribution
-- **Streamable HTTP**: SSE transport for real-time streaming
+- **Streamable HTTP**: Bidirectional HTTP streaming for real-time responses
 - **Health Checks**: Built-in health monitoring
 
 ### Available Tools
@@ -117,16 +117,16 @@ FIRECRAWL_API_KEY=your_firecrawl_api_key_here
 
 ### Server Endpoints
 
-- **MCP SSE Endpoint**: `http://localhost:8001/sse`
+- **MCP HTTP Endpoint**: `http://localhost:8001`
 - **Health Check**: `http://localhost:8001/health`
 
 ### Connecting Clients
 
 ```python
 from mcp import ClientSession
-from mcp.client.sse import sse_client
+from mcp.client.streamable_http import streamablehttp_client
 
-async with sse_client("http://localhost:8001/sse") as (read, write):
+async with streamablehttp_client("http://localhost:8001") as (read, write):
     async with ClientSession(read, write) as session:
         await session.initialize()
         result = await session.call_tool("search", {"query": "AI news"})

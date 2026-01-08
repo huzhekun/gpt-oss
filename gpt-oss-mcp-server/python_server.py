@@ -31,3 +31,7 @@ async def python(code: str) -> str:
                     content=[TextContent(text=code)])):
         messages.append(message)
     return "\n".join([message.content[0].text for message in messages])
+
+
+# Expose the ASGI app for uvicorn with streamable HTTP transport
+app = mcp.streamable_http_app()

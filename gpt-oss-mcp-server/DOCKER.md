@@ -20,7 +20,7 @@ This guide provides comprehensive instructions for deploying the gpt-oss MCP Bro
 
 ## Overview
 
-This Docker container packages the gpt-oss reference implementation of web browsing tools into a standalone, streamable HTTP MCP (Model Context Protocol) server. It provides AI models with the ability to search the web, read pages, and find patterns within content.
+This Docker container packages the gpt-oss reference implementation of web browsing tools into a standalone MCP (Model Context Protocol) server with streamable HTTP transport. It provides AI models with the ability to search the web, read pages, and find patterns within content.
 
 ## Features
 
@@ -29,7 +29,7 @@ This Docker container packages the gpt-oss reference implementation of web brows
 - **Pattern Finding**: Search for text patterns within loaded pages
 - **Session Management**: Per-client isolated browser state
 - **Citation Tracking**: Precise source attribution with line-level citations
-- **Streamable HTTP**: Server-Sent Events (SSE) for real-time streaming
+- **Streamable HTTP**: Bidirectional HTTP streaming for real-time responses
 - **Token-Aware**: Automatic truncation to fit context windows
 - **Multi-Backend**: Pluggable search providers (Exa, You.com, Firecrawl)
 - **Health Monitoring**: Built-in health checks for orchestration
@@ -381,10 +381,10 @@ For production monitoring, integrate with:
 ```python
 import asyncio
 from mcp import ClientSession
-from mcp.client.sse import sse_client
+from mcp.client.streamable_http import streamablehttp_client
 
 async def search_web():
-    async with sse_client("http://localhost:8001/sse") as (read, write):
+    async with streamablehttp_client("http://localhost:8001") as (read, write):
         async with ClientSession(read, write) as session:
             # Initialize
             await session.initialize()
@@ -413,13 +413,13 @@ Add to your Claude Desktop MCP settings (`~/Library/Application Support/Claude/c
 {
   "mcpServers": {
     "browser": {
-      "url": "http://localhost:8001/sse"
+      "url": "http://localhost:8001"
     }
   }
 }
 ```
 
-**Note**: The MCP endpoint requires the `/sse` path when connecting over SSE transport.
+**Note**: The server uses streamable HTTP transport for bidirectional real-time communication.
 
 ### Custom Application Integration
 
@@ -631,12 +631,12 @@ docker run --user $(id -u):$(id -g) ...
 
 ### Component Flow
 
-1. **Request Handling**: Client sends MCP tool call via HTTP/SSE
+1. **Request Handling**: Client sends MCP tool call via HTTP
 2. **Session Management**: AppContext creates/retrieves browser for client
 3. **Tool Execution**: SimpleBrowserTool processes request
 4. **Backend Query**: Appropriate backend (Exa/You.com/Firecrawl) fetched
 5. **Content Processing**: HTML converted to structured text with citations
-6. **Response Streaming**: Results streamed back via SSE
+6. **Response Streaming**: Results streamed back via HTTP
 
 ### Container Layers
 
