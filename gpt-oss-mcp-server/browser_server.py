@@ -5,6 +5,8 @@ from dataclasses import dataclass, field
 from typing import Union, Optional
 
 from mcp.server.fastmcp import Context, FastMCP
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 from gpt_oss.tools.simple_browser import SimpleBrowserTool
 from gpt_oss.tools.simple_browser.backend import YouComBackend, ExaBackend, FirecrawlBackend
 
@@ -124,8 +126,7 @@ async def find_pattern(ctx: Context, pattern: str, cursor: int = -1) -> str:
 
 
 # Add a health check endpoint for Kubernetes/Docker health probes
-# Access the underlying FastAPI app to add custom routes
-@mcp.app.get("/health")
-async def health_check():
+@mcp.custom_route("/health", methods=["GET"])
+async def health_check(request: Request) -> JSONResponse:
     """Health check endpoint for container orchestration"""
-    return {"status": "healthy"}
+    return JSONResponse({"status": "healthy"})
