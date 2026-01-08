@@ -124,7 +124,8 @@ async def find_pattern(ctx: Context, pattern: str, cursor: int = -1) -> str:
 
 
 # Add a health check endpoint for Kubernetes/Docker health probes
-@mcp.get("/health")
+# Access the underlying FastAPI app to add custom routes
+@mcp.app.get("/health")
 async def health_check():
     """Health check endpoint for container orchestration"""
     return {"status": "healthy"}
