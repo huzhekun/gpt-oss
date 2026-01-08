@@ -6,7 +6,7 @@ from typing import Union, Optional
 
 from mcp.server.fastmcp import Context, FastMCP
 from gpt_oss.tools.simple_browser import SimpleBrowserTool
-from gpt_oss.tools.simple_browser.backend import YouComBackend, ExaBackend
+from gpt_oss.tools.simple_browser.backend import YouComBackend, ExaBackend, FirecrawlBackend
 
 @dataclass
 class AppContext:
@@ -19,6 +19,8 @@ class AppContext:
                 backend = YouComBackend(source="web")
             elif tool_backend == "exa":
                 backend = ExaBackend(source="web")
+            elif tool_backend == "firecrawl":
+                backend = FirecrawlBackend(source="web")
             else:
                 raise ValueError(f"Invalid tool backend: {tool_backend}")
             self.browsers[session_id] = SimpleBrowserTool(backend=backend)

@@ -43,8 +43,10 @@ For production deployments, you can use Docker to run the MCP browser server as 
 cp .env.example .env
 
 # 2. Edit .env with your API keys
-# BROWSER_BACKEND=exa
+# BROWSER_BACKEND=exa  # or "youcom" or "firecrawl"
 # EXA_API_KEY=your_api_key_here
+# FIRECRAWL_API_KEY=your_api_key_here
+# FIRECRAWL_BASE_URL=https://api.firecrawl.dev/v2  # optional, for custom/self-hosted instances
 
 # 3. Build and start the server
 docker-compose up -d
@@ -76,7 +78,7 @@ docker run -d \
 
 The Docker container provides:
 
-- **Web Search**: Search using Exa or You.com backends
+- **Web Search**: Search using Exa, You.com, or Firecrawl backends
 - **Page Reading**: Open and read web pages with smart content extraction
 - **Pattern Finding**: Search for patterns within loaded pages
 - **Session Management**: Per-client browser state with page history
@@ -97,7 +99,7 @@ The MCP server exposes three tools:
 Set these environment variables in your `.env` file:
 
 ```bash
-# Backend selection: "exa" or "youcom"
+# Backend selection: "exa", "youcom", or "firecrawl"
 BROWSER_BACKEND=exa
 
 # Exa API Key (get from https://exa.ai)
@@ -105,6 +107,12 @@ EXA_API_KEY=your_exa_api_key_here
 
 # You.com API Key (get from https://api.you.com)
 YDC_API_KEY=your_youcom_api_key_here
+
+# Firecrawl API Key (get from https://firecrawl.dev)
+FIRECRAWL_API_KEY=your_firecrawl_api_key_here
+
+# Firecrawl Base URL (optional, defaults to https://api.firecrawl.dev/v2)
+# FIRECRAWL_BASE_URL=https://api.firecrawl.dev/v2
 ```
 
 ### Server Endpoints

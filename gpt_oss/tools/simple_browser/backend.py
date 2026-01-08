@@ -190,7 +190,7 @@ class YouComBackend(Backend):
             raise BackendError("You.com API key not provided")
         return key
 
-    
+
     async def search(
         self, query: str, topn: int, session: ClientSession
     ) -> PageContents:
@@ -246,6 +246,120 @@ class YouComBackend(Backend):
             html=data[0].get("html", ""),
             url=url,
             title=data[0].get("title", ""),
+            display_urls=True,
+            session=session,
+        )
+
+
+@chz.chz(typecheck=True)
+class FirecrawlBackend(Backend):
+    """Backend that uses the Firecrawl API."""
+
+    source: str = chz.field(doc="Description of the backend source")
+    api_key: str | None = chz.field(
+        doc="Firecrawl API key. Uses FIRECRAWL_API_KEY environment variable if not provided.",
+        default=None,
+    )
+    base_url: str | None = chz.field(
+        doc="Firecrawl API base URL. Uses FIRECRAWL_BASE_URL environment variable if not provided. Defaults to https://api.firecrawl.dev/v2",
+        default=None,
+    )
+
+    def _get_api_key(self) -> str:
+        key = self.api_key or os.environ.get("FIRECRAWL_API_KEY")
+        if not key:
+            raise BackendError("Firecrawl API key not provided")
+        return key
+
+    def _get_base_url(self) -> str:
+        return self.base_url or os.environ.get("FIRECRAWL_BASE_URL", "https://api.firecrawl.dev/v2")
+
+    async def _firecrawl_post(self, session: ClientSession, endpoint: str, payload: dict) -> dict:
+        """POST request with Bearer token authentication for Firecrawl."""
+        headers = {"Authorization": f"Bearer {self._get_api_key()}"}
+        base_url = self._get_base_url()
+        async with session.post(f"{base_url}{endpoint}", json=payload, headers=headers) as resp:
+            if resp.status != 200:
+                raise BackendError(
+                    f"{self.__class__.__name__} error {resp.status}: {await resp.text()}"
+                )
+            return await resp.json()
+
+    async def search(
+        self, query: str, topn: int, session: ClientSession
+    ) -> PageContents:
+        data = await self._firecrawl_post(
+            session,
+            "/search",
+            {"query": query, "limit": topn},
+        )
+
+        if not data.get("success"):
+            raise BackendError(f"Firecrawl search failed: {data}")
+
+        # Extract search results from the response
+        results_data = data.get("data", {})
+        titles_and_urls = []
+
+        # Process web results
+        if "web" in results_data:
+            for result in results_data["web"]:
+                title = result.get("title", "")
+                url = result.get("url", "")
+                description = result.get("description", "")
+                titles_and_urls.append((title, url, description))
+
+        # Process news results
+        if "news" in results_data:
+            for result in results_data["news"]:
+                title = result.get("title", "")
+                url = result.get("url", "")
+                description = result.get("description", "")
+                titles_and_urls.append((title, url, description))
+
+        # Create a simple HTML page to work with browser format
+        html_page = f"""
+<html><body>
+<h1>Search Results</h1>
+<ul>
+{"".join([f"<li><a href='{url}'>{title}</a> {summary}</li>" for title, url, summary in titles_and_urls])}
+</ul>
+</body></html>
+"""
+
+        return process_html(
+            html=html_page,
+            url="",
+            title=query,
+            display_urls=True,
+            session=session,
+        )
+
+    async def fetch(self, url: str, session: ClientSession) -> PageContents:
+        is_view_source = url.startswith(VIEW_SOURCE_PREFIX)
+        if is_view_source:
+            url = url[len(VIEW_SOURCE_PREFIX) :]
+
+        data = await self._firecrawl_post(
+            session,
+            "/scrape",
+            {"url": url, "formats": ["html"]},
+        )
+
+        if not data.get("success"):
+            raise BackendError(f"Firecrawl scrape failed: {data}")
+
+        scrape_data = data.get("data", {})
+        html_content = scrape_data.get("html", "")
+        title = scrape_data.get("metadata", {}).get("title", "")
+
+        if not html_content:
+            raise BackendError(f"No HTML content returned for {url}")
+
+        return process_html(
+            html=html_content,
+            url=url,
+            title=title,
             display_urls=True,
             session=session,
         )
