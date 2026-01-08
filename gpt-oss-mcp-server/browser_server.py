@@ -42,11 +42,12 @@ mcp = FastMCP(
 Tool for browsing.
 The `cursor` appears in brackets before each browsing display: `[{cursor}]`.
 Cite information from the tool using the following format:
-`【{cursor}†L{line_start}(-L{line_end})?】`, for example: `【6†L9-L11】` or `【8†L3】`. 
+`【{cursor}†L{line_start}(-L{line_end})?】`, for example: `【6†L9-L11】` or `【8†L3】`.
 Do not quote more than 10 words directly from the tool output.
 sources=web
 """.strip(),
     lifespan=app_lifespan,
+    host="0.0.0.0",
     port=8001,
 )
 
@@ -120,3 +121,10 @@ async def find_pattern(ctx: Context, pattern: str, cursor: int = -1) -> str:
         if message.content and hasattr(message.content[0], 'text'):
             messages.append(message.content[0].text)
     return "\n".join(messages)
+
+
+# Add a health check endpoint for Kubernetes/Docker health probes
+@mcp.get("/health")
+async def health_check():
+    """Health check endpoint for container orchestration"""
+    return {"status": "healthy"}
